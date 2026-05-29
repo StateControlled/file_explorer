@@ -17,7 +17,6 @@ def init() -> None:
         DEFAULT_DATA_STORE_PATH.mkdir(exist_ok=True)
         DEFAULT_SAVE_FILE_PATH.touch(exist_ok=True)
 
-        typer.echo(f"File was saved in directory {DEFAULT_DATA_STORE_PATH}")
         with DEFAULT_SAVE_FILE_PATH.open(mode="w") as file:
             data = {
                 "version": __version__,
