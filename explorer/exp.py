@@ -7,6 +7,7 @@ from rich.console import Console
 from rich.filesize import decimal
 from rich.panel import Panel
 from rich.syntax import Syntax
+import explorer.save_data as save_data
 
 import explorer.config as config
 import explorer.list_dir as list_dir
@@ -60,6 +61,12 @@ def main(context: typer.Context, version: Optional[bool] = typer.Option(
     if context.invoked_subcommand is not None:
         cfg = config.load_config()
         list_dir.list_dir(app_console, Path.cwd(), cfg)
+
+
+@app.command("loc")
+def get_save_location() -> None:
+    path: Path = save_data.get_save_data_path()
+    typer.echo(f"Save data located at {path}")
 
 
 @app.command("ls")

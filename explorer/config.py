@@ -1,13 +1,13 @@
+"""Configuration options"""
 import json
 from os import stat_result
 from pathlib import Path
 
 import explorer.exp as exp
-from explorer import __APP_PREF__,SUCCESS, DIR_ERROR, JSON_ERROR
+from explorer import __APP_PREF__, DIR_ERROR, JSON_ERROR, SUCCESS
 
 CONFIG_DIR: Path = Path.home() / ".config" / __APP_PREF__
 CONFIG_FILE: Path = CONFIG_DIR / "config.json"
-
 
 DEFAULT_CONFIG = {
     "show_hidden": False,
@@ -40,6 +40,10 @@ ICONS = {
     "symlink"   : "[l]",
     "exec"      : "[e]"
 }
+
+
+############################################################################
+
 
 def load_config() -> dict:
     """Loads the config file from disk. If this fails, returns the default configuration."""

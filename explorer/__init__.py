@@ -8,6 +8,7 @@ __last_update__ = "2026-05-26"
 
 __APP_PREF__ = "exp"
 
+
 # Define a series of return and error codes and assign integer numbers to them using range()
 (
     SUCCESS,
