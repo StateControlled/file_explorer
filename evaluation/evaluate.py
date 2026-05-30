@@ -186,11 +186,11 @@ def qualitative(index: Index, theme_to_docs: dict[str, set[int]],
                  "intent": intent_mod.classify(q.text),
                  "n_relevant": len(relevant)}
         for tag, prf, boost in [("baseline", False, False), ("full", True, True)]:
-            res = search(index, q.text, usePrf=prf, useBoost=boost, params=params, topN=5)
             entry[tag] = [
                 {"title": r.title[:48], "category": r.category,
-                 "score": round(r.score, 4), "relevant": r.doc_id in relevant}
+                 "score": round(r.score, 4), "relevant": r.docId in relevant}
                 for r in res
+            ]
             ]
         out.append(entry)
     return out
