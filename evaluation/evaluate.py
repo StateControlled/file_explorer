@@ -1,22 +1,19 @@
-"""End-to-end evaluation: corpus stats, 2x2 ablation, grid search, qualitative cases.
+# evaluation: corpus stats, 2x2 ablation, grid search, qualitative cases.
+# Run with:
+#     python -m evaluation.evaluate --corpus data/corpus
+# What it does
+# ------------
+# 1.  Builds (and caches) the index over the downloaded corpus.
+# 2.  Turns the provenance 'manifest.json' into binary relevance judgements
+#     (qrels): a document is relevant to a query iff its provenance theme is one
+#     of the query's relevant themes.
+# 3.  Runs the four ablation variants (baseline / +boost / +PRF / full) and reports
+#     P@10, MAP and NDCG@10 -- the 2x2 table the brief asks for.
+# 4.  Grid-searches the hyper-parameters (PRF k, PRF beta, boost gamma) and reports
+#     the effect of each, plus the best configuration.
+# 5.  Saves everything to 'data/eval_results.json' for the write-up and prints
+#     qualitative success/failure examples.
 
-Run with:
-
-    python -m evaluation.evaluate --corpus data/corpus
-
-What it does
-------------
-1.  Builds (and caches) the index over the downloaded corpus.
-2.  Turns the provenance ``manifest.json`` into binary relevance judgements
-    (qrels): a document is relevant to a query iff its provenance *theme* is one
-    of the query's relevant themes.
-3.  Runs the four ablation variants (baseline / +boost / +PRF / full) and reports
-    P@10, MAP and NDCG@10 -- the 2x2 table the brief asks for.
-4.  Grid-searches the hyper-parameters (PRF k, PRF beta, boost gamma) and reports
-    the effect of each, plus the best configuration.
-5.  Saves everything to ``data/eval_results.json`` for the write-up and prints
-    qualitative success/failure examples.
-"""
 from __future__ import annotations
 
 import argparse
