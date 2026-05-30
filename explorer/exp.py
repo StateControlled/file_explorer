@@ -201,4 +201,4 @@ def change_directory(path: str = typer.Argument(..., help="Navigate to another d
 def search_for(query: str = typer.Argument(..., help="Search query string")) -> None:
     # TODO implement search logic
     app_console.print(f"Searching for query: {query}")
-    
+
