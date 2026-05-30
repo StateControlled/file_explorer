@@ -1,93 +1,290 @@
-CSC575 Intelligent Information Retrieval\
-Final Project\
-William Berthouex\
-Noah Sleeman
+# CSC575 Intelligent Information Retrieval — Final Project
 
-# Run
+**A content-based local file search engine**
+William Berthouex · Noah Sleeman · Team *Can't Recall*
 
-From the root directory run <code>python -m explorer</code>
+A command-line tool that indexes a directory of heterogeneous files (prose,
+web pages, PDFs, source code, Jupyter notebooks) and retrieves the most relevant
+ones for a free-text query using a vector-space model. On top of the classic
+TF-IDF / cosine baseline it adds two advanced components — **query-conditioned
+file-type boosting** and **Rocchio pseudo-relevance feedback** — each of which
+can be toggled independently so their contribution can be measured.
 
-| <strong>Options</strong> | Description                        |
-|--------------------------|------------------------------------|
-| --version   -v           | Displays version information       |
-| --about     -a           | Displays more detailed information |
-| --help                   | Shows a list of commands           |
+The **core retrieval algorithms** — the inverted index, TF-IDF weighting, cosine
+similarity, the query-intent classifier, the file-type boost, the Rocchio
+feedback loop and the evaluation metrics — are implemented from scratch.
+Standard libraries are used only for routine text handling: `nltk` for Porter
+stemming, `BeautifulSoup` for stripping HTML, and `pypdf` for extracting text
+from PDFs.
 
+---
 
-| <strong>Commands</strong>  | Description                                                 |
-|----------------------------|-------------------------------------------------------------|
-| cfg                        | Prints the current configuration                            |
-| loc                        | Prints the current paths to saved data                      |
-| return-cwd                 | Returns the current working directory to its original point |
-| ls                         | List directory contents                                     |
-| open                       | Opens a text file in the console                            |
-| cd                         | Change the current working directory                        |
-| search                     | Searches for files in the current directory                 |
- 
+## 1. Setup
 
-## Requirements
+```bash
+python -m pip install -r requirements.txt
+```
 
-See requirements.txt
+Requires **Python 3.12+** (the code uses modern f-string syntax). No virtual
+environment is bundled.
+
+---
+
+## 2. Quick start
+
+```bash
+# 1. Build the corpus from public sources (see §4), or use any folder you like
+python -m corpus.build_corpus --out data/corpus
+
+# 2. Build the search index over it
+python -m explorer index data/corpus
+
+# 3. Search
+python -m explorer search "what is cryptography and how does encryption work"
+python -m explorer search "flask web framework route function" --boost
+python -m explorer search "machine learning neural networks" --prf --boost
+```
+
+`index` works on any directory — point it at your own folder of files.
+
+---
+
+## 3. Usage
+
+Run the application with `python -m explorer`. It is both an interactive file
+explorer (its original purpose) and a search engine.
+
+### Global options
+
+| Option            | Description                        |
+|-------------------|------------------------------------|
+| `--version` `-v`  | Display version information        |
+| `--about` `-a`    | Display more detailed information  |
+| `--help`          | Show the list of commands          |
+
+### Commands
+
+| Command        | Description                                                    |
+|----------------|---------------------------------------------------------------|
+| `cfg`          | Print the current configuration                               |
+| `loc`          | Print the paths to saved data                                 |
+| `return-cwd`   | Return the working directory to its original point            |
+| `ls`           | List directory contents                                       |
+| `open`         | Open a text file in the console                                |
+| `cd`           | Change the current working directory                          |
+| **`index`**    | **Build the search index over a directory of documents**      |
+| **`search`**   | **Search the indexed documents for a query**                  |
+
+### `index`
+
+```
+python -m explorer index [ROOT] [--out PATH]
+```
+Crawls `ROOT` (default: current directory) for every supported file, builds the
+inverted index and TF-IDF vectors, and saves them (default: the application data
+directory). Supported extensions: `.txt .md .rst .html .htm .pdf .ipynb` and
+source code (`.py .java .c .h .cpp .cc .hpp .cs .js .ts .go .rs .rkt .hs`).
+
+### `search`
+
+```
+python -m explorer search "QUERY" [--prf] [--boost] [-n N] [--index PATH]
+```
+
+| Flag            | Effect                                                            |
+|-----------------|------------------------------------------------------------------|
+| `--prf`         | Enable Rocchio pseudo-relevance feedback                         |
+| `--boost`       | Enable query-conditioned file-type boosting                     |
+| `-n`, `--num`   | Number of results to display (default 10)                       |
+| `-i`, `--index` | Use a specific index file                                       |
+
+With neither flag the system is the **baseline** TF-IDF cosine ranker; the two
+flags add the two advanced components, which is exactly the 2×2 ablation used in
+the evaluation (§6).
+
+---
+
+## 4. Dataset
+
+The corpus is assembled from **public sources** by
+[`corpus/build_corpus.py`](corpus/build_corpus.py), so it is reproducible and is
+*not* committed to this repository (the submission stays lightweight).
+
+```bash
+python -m corpus.build_corpus --out data/corpus            # ~45-70 MB
+python -m corpus.build_corpus --out data/corpus --scale 0.5   # smaller/faster
+python -m corpus.build_corpus --only wikipedia,gutenberg   # a subset of sources
+```
+
+| Source            | File types          | What we gathered                                  |
+|-------------------|---------------------|---------------------------------------------------|
+| Project Gutenberg | `.txt`              | public-domain books (literature, philosophy, science) |
+| Wikipedia         | `.html`, `.txt`     | articles across ~18 topics (ML, cryptography, biology, …) |
+| arXiv             | `.pdf`              | recent CS papers (cs.IR, cs.LG, cs.CR, cs.DB, …)  |
+| GitHub repos      | `.py .java .cpp .h .rs` | source files from Flask, requests, nlohmann/json, gson, scikit-learn, sqlparser-rs, CPython |
+| GitHub notebooks  | `.ipynb`            | notebooks from data-science / ML repos (outputs stripped) |
+
+> **AI-use disclosure:** `corpus/build_corpus.py` is a one-time data-collection
+> utility (it is *not* part of the IR system) and was written with the help of an
+> AI coding assistant. It is included for transparency and reproducibility.
+
+Each file is catalogued in `data/corpus/manifest.json` with a `theme` label
+derived from **where it came from** (not its text). The evaluation uses those
+provenance labels as relevance judgements, so scoring does not simply reward the
+ranker for matching indexed words. Several themes (`machine_learning`,
+`cryptography`, `databases`, …) span multiple sources and file types on purpose,
+so that "which file type is relevant for this query" is genuinely testable.
+
+<!-- CORPUS_STATS -->
+The corpus used for the reported results contains **709 files**, of which **650**
+held extractable text and were indexed (the rest were empty/scanned PDFs or
+near-empty source files), giving **67,610 unique terms**:
+
+| File category | Documents |
+|---------------|-----------|
+| code (`.py .java .cpp .h .c .rs`) | 359 |
+| text (`.txt`)                     | 158 |
+| notebook (`.ipynb`)               | 77  |
+| html (`.html`)                    | 36  |
+| pdf (`.pdf`)                      | 20  |
+| **total**                         | **650** |
+
+> **Dataset access:** the exact ~45 MB corpus is shared here:
+> `‹ADD GOOGLE-DRIVE/ONEDRIVE LINK›`. Download and unzip it to `data/corpus/`
+> (so that `data/corpus/manifest.json` exists), then run §2.
+
+---
+
+## 5. How it works
+
+```
+            query                                   documents (mixed file types)
+              │                                              │
+       ┌──────▼───────┐                          ┌───────────▼───────────┐
+       │ analyze:     │                          │ parsers:              │
+       │ tokenize →   │                          │ html/ipynb/pdf/code → │
+       │ stopword →   │                          │ plain text            │
+       │ Porter stem  │                          └───────────┬───────────┘
+       └──────┬───────┘                                      │ analyze
+              │ query vector (ltc, L2-normalized)            ▼
+              │                              inverted index + TF-IDF doc vectors
+              │                                              │
+       ┌──────▼──────────────────────────────────────────────▼─────────┐
+       │ 1. cosine similarity ranking                                   │
+       │ 2. [--prf]   Rocchio: move query toward top-k centroid, re-rank│
+       │ 3. [--boost] multiply scores by boost[intent][file-type]       │
+       └───────────────────────────────┬───────────────────────────────┘
+                                        ▼
+                                 ranked results
+```
+
+* **Preprocessing** (`explorer/ir/preprocess.py`) — tokenization, stopword
+  removal and Porter stemming (NLTK), applied identically to documents and
+  queries.
+* **Indexing** (`explorer/ir/index.py`) — an inverted index plus cosine-
+  normalized TF-IDF document vectors (SMART `ltc`). With both sides normalized,
+  cosine similarity is a dot product.
+* **Intent classifier** (`explorer/ir/intent.py`) — a transparent rule-based
+  classifier labelling each query `code`, `prose` or `neutral`.
+* **File-type boost** (`explorer/ir/rank.py`) — multiplies each document's score
+  by a factor depending on (query intent × file category); the concrete answer
+  to "what makes a file *type* relevant to a query".
+* **Rocchio PRF** (`explorer/ir/rank.py`) — assumes the top-k results are
+  relevant, moves the query vector toward their centroid, and re-ranks.
+
+---
+
+## 6. Evaluation
+
+```bash
+python -m evaluation.evaluate --corpus data/corpus
+```
+
+This builds qrels from the manifest, runs the four ablation variants over the
+test queries in [`evaluation/queries.py`](evaluation/queries.py), grid-searches
+the hyper-parameters, and writes `data/eval_results.json`. Metrics: **P@10,
+MAP, NDCG@10**.
+
+<!-- RESULTS_TABLE -->
+2×2 ablation over 28 queries (default hyper-parameters):
+
+| Variant              | P@10   | MAP    | NDCG@10 |
+|----------------------|--------|--------|---------|
+| Baseline TF-IDF      | 0.7250 | 0.6044 | 0.7618  |
+| + File-type boost    | 0.7393 | 0.6089 | 0.7728  |
+| + PRF                | 0.7571 | 0.6329 | 0.7758  |
+| Full (PRF + boost)   | 0.7607 | 0.6342 | 0.7833  |
+
+Grid search best (prf_k=5, β=0.5, γ=2.0): **P@10 0.7893, MAP 0.6382, NDCG@10
+0.8011**. Both components improve every metric; PRF is the larger contributor and
+the file-type boost adds a smaller, consistent gain. The rule-based intent
+classifier matches the expected label on 27/28 queries (96.4%).
+
+---
+
+## 7. Project layout
+
+```
+explorer/            file-explorer CLI + IR engine
+  ir/
+    preprocess.py    tokenizer, stopwords, stemming (NLTK)
+    parsers.py       per-file-type text extraction (bs4, pypdf)
+    index.py         inverted index + TF-IDF (+ persistence)
+    intent.py        rule-based query intent classifier
+    rank.py          cosine, file-type boost, Rocchio PRF
+    search.py        high-level search orchestration
+  exp.py             Typer commands (incl. `index`, `search`)
+corpus/
+  build_corpus.py    one-time public-source corpus downloader (AI-assisted)
+evaluation/
+  metrics.py         P@k, AP/MAP, NDCG@k
+  queries.py         test queries + provenance-based relevance themes
+  evaluate.py        ablation + grid search harness
+report/
+  make_figures.py    builds the report figures from the results
+documents/           a few sample text documents
+```
 
 ## Built With
 
-Python
+Python 3.12+ · [Typer](https://typer.tiangolo.com/) (CLI) ·
+[Rich](https://rich.readthedocs.io/) (terminal formatting) ·
+[NLTK](https://www.nltk.org/) (Porter stemmer) ·
+[BeautifulSoup](https://www.crummy.com/software/BeautifulSoup/) (HTML) ·
+[pypdf](https://pypdf.readthedocs.io/) (PDF text). The index, TF-IDF, cosine
+ranking, intent classifier, file-type boost, Rocchio feedback and evaluation
+metrics are implemented from scratch.
 
-# Revised Project Roadmap
+---
 
-<strong>Kill these from the proposal:</strong> the "manually compile from personal computers" plan, the GUI stretch goal, and "user feedback to judge relevance" as your main eval (it's not reproducible and the prof flagged it).
+<details>
+<summary><strong>Appendix — original proposal &amp; revised roadmap</strong></summary>
 
-<strong>Pick a public corpus instead of compiling one.</strong> Aim for ~3,000–5,000 files across 4–5 file types so "file type matters" is actually testable. A clean mix:
+### Revised Project Roadmap (incorporating instructor feedback)
 
-~1,500 Wikipedia articles saved as .html and .txt (Wikipedia dump or scrape a category)<br>
-~1,000 Project Gutenberg books as .txt<br>
-~500 arXiv papers as .pdf (CS category, easy bulk download)<br>
-~500 source files from 5–10 popular GitHub repos (.py, .java, .cpp, .h)<br>
-~500 Jupyter notebooks from a Kaggle competition dump (.ipynb)<br>
-That gives you natural diversity and the file-type story writes itself.
-
-<strong>Make the "advanced features" concrete — pick exactly two.</strong> This is what separates you from Spotlight/Windows Search:
-
-1. <strong>Query-conditioned file-type boosting.</strong> Classify each query into an intent category using simple rules: queries containing tokens like def, class, import, function, null pointer → code intent; queries like how to, what is, explain → prose intent; bare nouns → neutral. Multiply the cosine score by a learned (or hand-tuned) boost per (intent × file-type) pair. This is your concrete answer to "what criteria determine file-type relevance."
-
-2. <strong>Pseudo-relevance feedback (Rocchio).</strong> Take the top-k results from the initial query, expand the query vector toward their centroid, re-rank. This is textbook IR, easy to implement, and directly evaluable. Use this instead of user feedback — it's the same idea but reproducible.
-
-<strong>Design the experiment as a 2×2 ablation.</strong> Build 20–30 test queries with manual relevance judgments (qrels) — you and your partner each judge, then reconcile. Then run four system variants:
-
+Dropped from the proposal: manually compiling a corpus from personal computers,
+the GUI stretch goal, and using live user feedback as the main evaluation (not
+reproducible). Instead: a public multi-file-type corpus, two concrete advanced
+features (query-conditioned file-type boosting and Rocchio pseudo-relevance
+feedback), and a 2×2 ablation evaluated with P@10 / MAP / NDCG@10.
 
 |                      | No PRF          | With PRF    |
 |----------------------|-----------------|-------------|
 | No file-type boost   | baseline TF-IDF | + PRF only  |
 | With file-type boost | + boost only    | full system |
 
-<strong>Report P@10, MAP, and NDCG@10</strong> for each cell. The professor explicitly wants to see effectiveness of feedback and file-type components, and a 2×2 ablation answers exactly that. Bonus: include 3–4 example queries showing where each component helps or hurts.
+### Project Proposal (summary)
 
-### Revised roadmap (4 weeks, since you're past May 5):
-1. May 8–15: Download/assemble the corpus. Write the crawler + parsers per file type (PDF via pypdf, ipynb as JSON, code as plain text, HTML stripped of tags). Verify file count and distribution.
-2. May 15–22: Build inverted index, TF-IDF, cosine ranking. CLI that prints ranked results. This is your baseline.
-3. May 22–29: Add the two advanced features: query intent classifier + file-type boosting, and Rocchio PRF. Make each toggleable via a flag so the ablation is trivial to run.
-4. May 29–Jun 5: Write 20–30 queries, build qrels, run all four ablation variants, compute metrics, make the results table and a short error analysis.
-5. Jun 5–9: Write up, polish, submit.
+Type A project. A file search system that, given a local directory of mixed
+document types, returns the most relevant files for a keyword query using an
+inverted index with TF-IDF term weighting and cosine ranking, plus document
+preprocessing (tokenization, stopword removal, stemming).
 
-# Project Proposal
+References:
+- Baeza-Yates, R., & Ribeiro-Neto, B. *Modern Information Retrieval.* Addison-Wesley.
+- Soules, C. A. N., & Ganger, G. R. (2005). *Connections: using context to
+  enhance file search.* SOSP '05.
+- Dinneen, J. D., & Julien, C.-A. (2020). *The ubiquitous digital file: A review
+  of file management research.* JASIST, 71.
 
-| Team name:                                             | Can’t Recall                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
-|--------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Student names:                                         | Noah Sleeman, William Berthouex                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
-| Project Type (Type A, B, C or D) :                     | A                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| Brief Project Description:                             | We plan to implement a file search system searching a local machines directory for relevant files to a query. Given a file system on a local machine, allow the user to search for files by providing key words. Ideally, the retrieval system will return the most relevant files in the directory.                                                                                                                                                                                                                                                                                               |
-| Objectives:                                            | -Retrieval system will retrieve a variety of file types that may deem more relevant than others based on the query.<br>-Retrival system will utilize an inverted index with term weighting (ie TF-IDF) for text based files.                                                                                                                                                                                                                                                                                                                                                                       |
-| IIR task(s) for the project:                           | -Implement document preprocessing (tokenization, stopword removal, stemming), index construction, and query processing.<br>-Documents will be parsed from a local directory and transformed into appropriate data structures.<br>-Implement vector-space retrieval model and cosine similarity for ranking.<br>                                                                                                                                                                                                                                                                                    |
-| Brief description of data set(s) that you will use:    | We intended to compile a directory filled with many different types of documents such as { .pdf, .docx, .txt, .md, .html, .rkt, .hs, .h, .cc, .cpp, .ipynb, .py, .java, .csv, .json}                                                                                                                                                                                                                                                                                                                                                                                                               | 
-| Data source:                                           | Data will be manually collected from our personal computers and internet.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |                                                                                                  
-| Potential Indexing Methodology:                        | Using tokenization, stopword removal and stemming convert each document into a ‘bag of words’ representation. An inverted index will be constructed mapping terms to document IDs along with term frequencies. TF-IDF weights will be computed and stored to support efficient retrieval.                                                                                                                                                                                                                                                                                                          |
-| Potential Search and Matching Methodology:             | Queries will use the same preprocessing and indexing methodology as mentioned previously. The query will be transformed into a TF-IDF vector in the same vector space as the indexed documents. Matching will be performed by computing similarity scores between the query vector and document vectors.                                                                                                                                                                                                                                                                                           |
-| Potential Ranking Methodology:                         | Ranking will be based on cosine similarity scores with respect to query vectors.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |                                                                                                                                                                                                                        
-| Potential Browsing  and/or Navigation Methodology:     | Using a simple command line interface, the terminal will allow for entering queries and displaying results to the user. Retrieved documents will be shown as a ranked list with document names, paths, and relevance scores.                                                                                                                                                                                                                                                                                                                                                                       |                                                                             
-| Experiments that you will use to evaluate your System: | Using predefined test queries based on our data for consistent evaluation.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
-| Evaluation metrics to be used:                         | User feedback to judge relevance<br>Precision & Recall                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| Schedule:                                              | Apr 28 - Complete preliminary research into existing local file search/retrieval applications.<br>May 5 - Complete file system crawler, basic display<br>May 19 - Complete indexing functionality: parsing and indexing files, ranking<br>May 26 -  Query processing, user feedback, persistent index results<br>Jun 2 - Final testing, bug fixing, output formatting. If time allows, GUI implementation and/or optimization.<br>Jun 9 - Final implementation complete and submitted                                                                                                              |
-| References:                                            | Baeza-Yates, R., & Ribeiro-Neto, B. Modern Information Retrieval. Addison-Wesley. https://web.cs.ucla.edu/~miodrag/cs259-security/baeza-yates99modern.pdf<br><br>Soules, Craig AN, and Gregory R. Ganger. "Connections: using context to enhance file search." In Proceedings of the twentieth ACM symposium on operating systems principles, pp. 119-132. 2005.<br><br>Dinneen, J.D. and Julien, C.-A. (2020), The ubiquitous digital file: A review of file management research. Journal of the Association for Information Science and Technology, 71: E1-E32. https://arxiv.org/pdf/2109.09668 | 
-
-
-
+</details>

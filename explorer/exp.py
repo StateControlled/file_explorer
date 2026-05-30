@@ -1,3 +1,4 @@
+import time
 from pathlib import Path
 from typing import Optional
 
@@ -7,17 +8,25 @@ from rich.console import Console
 from rich.filesize import decimal
 from rich.panel import Panel
 from rich.syntax import Syntax
+from rich.table import Table
 
 import explorer.config as config
 import explorer.list_dir as list_dir
 import explorer.save_data as save_data
 from explorer import __app_name__, __APP_PREF__, __author__, __doc__, __last_update__, __version__
+from explorer.ir import intent as intent_mod
+from explorer.ir.index import Index, buildIndex
+from explorer.ir.rank import SearchParams
+from explorer.ir.search import search as ir_search
 from explorer.save_data import SaveDataHandler
 
 MAX_VIEW_SIZE = 1024 * 1024
 """Files larger than this will be truncated in console view"""
 MAX_VIEW_LINES = 350
 """Maximum number of lines of a text file that will be rendered to console"""
+
+DEFAULT_INDEX_PATH: Path = config.CONFIG_DIR / "index.json.gz"
+"""Default on-disk location for the search index built by the `index` command."""
 
 app = typer.Typer(name=__APP_PREF__,
                   help="File Explore and Search",
@@ -197,8 +206,85 @@ def change_directory(path: str = typer.Argument(..., help="Navigate to another d
     list_dir.list_dir(app_console, target, cfg)
 
 
-@app.command("search", help="Searches for files in the current directory")
-def search_for(query: str = typer.Argument(..., help="Search query string")) -> None:
-    # TODO implement search logic
-    app_console.print(f"Searching for query: {query}")
+@app.command("index", help="Build the search index over a directory of documents")
+def index_corpus(
+    root: Optional[str] = typer.Argument(None, help="Directory to index (default: current directory)"),
+    out: Optional[str] = typer.Option(None, "--out", "-o", help="Where to write the index (default: app data dir)"),
+) -> None:
+    """Crawl ``root`` for supported files, build the inverted index + TF-IDF
+    vectors, and persist them so the `search` command can use them."""
+    cfg = config.load_config()
+    theme = config.theme(cfg)
+    target = Path(root).expanduser().resolve() if root else Path.cwd()
+    out_path = Path(out).expanduser().resolve() if out else DEFAULT_INDEX_PATH
+
+    if not target.is_dir():
+        app_console.print(f"[{theme['error']}]Not a directory:[/] {target}")
+        raise typer.Exit(1)
+
+    app_console.print(f"[{theme['accent']}]Indexing[/] {target} ...")
+    start = time.time()
+    idx = buildIndex(target, doPrints=True)
+    if idx.N == 0:
+        app_console.print(f"[{theme['warning']}]No indexable documents found under {target}.[/]")
+        raise typer.Exit(1)
+    idx.save(out_path)
+    elapsed = time.time() - start
+    app_console.print(
+        f"[{theme['success']}]Indexed {idx.N} documents[/] "
+        f"({len(idx.df)} unique terms) in {elapsed:.1f}s\n"
+        f"[{theme['date']}]Index saved to[/] {out_path}"
+    )
+
+
+@app.command("search", help="Search the indexed documents for a query")
+def search_for(
+    query: str = typer.Argument(..., help="Search query string"),
+    num: int = typer.Option(10, "--num", "-n", help="Number of results to show. Default=10"),
+    prf: bool = typer.Option(False, "--prf", help="Enable Rocchio pseudo-relevance feedback"),
+    boost: bool = typer.Option(False, "--boost", help="Enable query-conditioned file-type boosting"),
+    index_path: Optional[str] = typer.Option(None, "--index", "-i", help="Path to a saved index"),
+) -> None:
+    """Rank indexed documents against ``query`` using the vector-space model,
+    optionally with pseudo-relevance feedback (--prf) and file-type boosting
+    (--boost)."""
+    cfg = config.load_config()
+    theme = config.theme(cfg)
+    idx_path = Path(index_path).expanduser().resolve() if index_path else DEFAULT_INDEX_PATH
+
+    if not idx_path.exists():
+        app_console.print(
+            f"[{theme['error']}]No index found at[/] {idx_path}\n"
+            f"[{theme['warning']}]Build one first:[/] exp index <directory>"
+        )
+        raise typer.Exit(1)
+
+    idx = Index.load(idx_path)
+    detected = intent_mod.classify(query)
+    results = ir_search(idx, query, usePrf=prf, useBoost=boost,
+                        params=SearchParams(), topN=num)
+
+    flags = []
+    if prf:
+        flags.append("PRF")
+    if boost:
+        flags.append("file-type boost")
+    mode = " + ".join(flags) if flags else "baseline TF-IDF cosine"
+    header = (f"[{theme['header']}]Query:[/] {query}    "
+              f"[{theme['date']}]intent={detected} | mode={mode} | {idx.N} docs[/]")
+    app_console.print(Panel(header, box=box.ROUNDED, border_style=theme["accent"]))
+
+    if not results:
+        app_console.print(f"  [{theme['date']}](no matching documents)[/]")
+        return
+
+    table = Table(box=box.SIMPLE_HEAD, show_header=True, header_style=theme["header"], pad_edge=False)
+    table.add_column("#", width=3, justify="right")
+    table.add_column("Score", style=theme["size"], justify="right")
+    table.add_column("Type", style=theme["date"])
+    table.add_column("Title", style=theme["file"])
+    table.add_column("Path", style=theme["date"])
+    for rank_i, r in enumerate(results, start=1):
+        table.add_row(str(rank_i), f"{r.score:.4f}", r.category, r.title, r.path)
+    app_console.print(table)
 
