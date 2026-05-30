@@ -181,3 +181,8 @@ cython_debug/
 #  refer to https://docs.cursor.com/context/ignore-files
 .cursorignore
 .cursorindexingignore
+# IR corpus + built index (rebuildable artifacts, not committed)
+/data/
+
+# Personal study notes (not part of the submission)
+NOTES.md
