@@ -2,6 +2,7 @@ import mimetypes
 import os
 import stat
 from datetime import datetime
+from os import stat_result
 from pathlib import Path
 from typing import Any
 
@@ -19,7 +20,7 @@ import explorer.config as config
 def list_dir(console: Console, path: Path, cfg: dict, long_listing: bool = False) -> None:
     """List directory contents"""
     theme: dict = config.theme(cfg)
-    entries: list[Path] = config.gather_entries(path, cfg)
+    entries: list[Path] = gather_entries(path, cfg)
 
     header = Text()
     header.append("[D] ")
@@ -35,6 +36,42 @@ def list_dir(console: Console, path: Path, cfg: dict, long_listing: bool = False
         _long_listing(console, entries, cfg)
     else:
         _short_listing(console, entries, cfg)
+
+
+def gather_entries(path: Path, cfg: dict) -> list[Path]:
+    """Returns a sorted list of files and directories from the provided directory."""
+    show_hidden: bool = cfg.get("show_hidden", False)
+
+    entries: list[Path] = list(path.iterdir())
+
+    if not show_hidden:
+        entries = [entry for entry in entries if not entry.name.startswith(".")]
+    return sort_entries(entries, cfg)
+
+
+def sort_entries(entries: list[Path], cfg: dict) -> list[Path]:
+    """Returns a custom key function to determine the sorting order of builtins.sorted()"""
+    key: str = cfg.get("sort_by", "name")
+    rev: bool = cfg.get("sort_reverse", False)
+
+    def sort_key(path: Path):
+        """A custom key function, determined by the type of file the path resolves to,
+        to determine the sorting order of builtins.sorted()"""
+        try:
+            stats: stat_result = path.stat(follow_symlinks=False)
+        except OSError:
+            return "", 0, 0
+
+        if key == "size":
+            return 0 if path.is_dir() else 1, stats.st_size
+        if key == "date":
+            return 0 if path.is_dir() else 1, stats.st_mtime
+        if key == "type":
+            return 0 if path.is_dir() else 1, path.suffix.lower(), path.name.lower()
+
+        return 0 if path.is_dir() else 1, path.name.lower()
+
+    return sorted(entries, key=sort_key, reverse=rev)
 
 
 def _short_listing(console: Console, entries: list[Path], cfg: dict) -> None:
@@ -61,11 +98,7 @@ def _long_listing(console: Console, entries: list[Path], cfg: dict) -> None:
     table.add_column("Permissions", style="dim white")
 
     for e in entries:
-        try:
-            estat = e.stat(follow_symlinks=False)
-        except OSError:
-            continue
-
+        estat = e.stat(follow_symlinks=False)
         icon, style = _style_icon_for(e, theme)
 
         size_str = "" if e.is_dir() else decimal(estat.st_size)
