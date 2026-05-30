@@ -6,9 +6,15 @@ William Berthouex · Noah Sleeman · Team *Can't Recall*
 A command-line tool that indexes a directory of heterogeneous files (prose,
 web pages, PDFs, source code, Jupyter notebooks) and retrieves the most relevant
 ones for a free-text query using a vector-space model. On top of the classic
-TF-IDF / cosine baseline it adds two advanced components — **query-conditioned
-file-type boosting** and **Rocchio pseudo-relevance feedback** — each of which
-can be toggled independently so their contribution can be measured.
+TF-IDF / cosine baseline it adds two advanced components: **query-conditioned
+file-type boosting** and **Rocchio pseudo-relevance feedback** each of which
+can be toggled independently so their contribution can be measured. 
+
+**-Rocchio PRF via top k docs:**
+ This expands and adjusts query vector based off top k docs based off initial cosine ranking
+
+**-file-type boosting:**
+ Based on the documents file type and intent it adjusts doc scores affecting final ranking 
 
 The **core retrieval algorithms** — the inverted index, TF-IDF weighting, cosine
 similarity, the query-intent classifier, the file-type boost, the Rocchio
