@@ -1,19 +1,19 @@
-"""Test queries with provenance-based relevance labels.
+# Test queries with provenance-based relevance labels.
 
-Each query lists the corpus *themes* whose documents are considered relevant.
-Themes come from the corpus manifest written by ``corpus/build_corpus.py`` and are
-derived from a document's *source*, not its text -- so judging retrieval against
-them does not simply reward the ranker for matching the words it indexed.
+# Each query lists the corpus themes whose documents are considered relevant.
+# Themes come from the corpus manifest written by 'corpus/build_corpus.py' and are
+# derived from a document's source, not its text. so judging retrieval against
+# them does not simply reward the ranker for matching the words it indexed.
 
-``expected_intent`` records the intent we expect the rule-based classifier to
-assign; it is used only for analysis/reporting, not for scoring.
+# 'expected_intent' records the intent we expect the rule-based classifier to
+# assign; it is used only for analysis/reporting, not for scoring.
 
-The set is deliberately balanced across three situations:
-  * prose-intent queries whose relevant docs are mostly prose/PDF/HTML,
-  * code-intent queries whose relevant docs are mostly source/notebooks,
-  * neutral/mixed queries whose relevant docs span several file types,
-so that the file-type boost can both help and (honestly) sometimes hurt.
-"""
+# The set is deliberately balanced across three situations:
+#   * prose-intent queries whose relevant docs are mostly prose/PDF/HTML,
+#   * code-intent queries whose relevant docs are mostly source/notebooks,
+#   * neutral/mixed queries whose relevant docs span several file types,
+# so that the file-type boost can both help and (honestly) sometimes hurt.
+
 from __future__ import annotations
 
 from dataclasses import dataclass
