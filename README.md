@@ -3,6 +3,35 @@ Final Project\
 William Berthouex\
 Noah Sleeman
 
+# Run
+
+From the root directory run <code>python -m explorer</code>
+
+| <strong>Options</strong> | Description                        |
+|--------------------------|------------------------------------|
+| --version   -v           | Displays version information       |
+| --about     -a           | Displays more detailed information |
+| --help                   | Shows a list of commands           |
+
+
+| <strong>Commands</strong>  | Description                                                 |
+|----------------------------|-------------------------------------------------------------|
+| cfg                        | Prints the current configuration                            |
+| loc                        | Prints the current paths to saved data                      |
+| return-cwd                 | Returns the current working directory to its original point |
+| ls                         | List directory contents                                     |
+| open                       | Opens a text file in the console                            |
+| cd                         | Change the current working directory                        |
+| search                     | Searches for files in the current directory                 |
+ 
+
+## Requirements
+
+See requirements.txt
+
+## Built With
+
+Python
 
 # Revised Project Roadmap
 
