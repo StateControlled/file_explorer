@@ -26,7 +26,7 @@ def init() -> None:
                 "history": []
             }
             json.dump(data, file, indent=4)
-            typer.echo("Saved data!")
+            # typer.echo("Saved data!")
 
 
 def get_save_path() -> Path:
@@ -34,11 +34,13 @@ def get_save_path() -> Path:
 
 
 class DataResponse(NamedTuple):
+    # the current working directory
     current_working_directory: Path | None
-    # A list of dictionaries representing to-dos
-    history: list[dict[int, Any]]
+    # A list representing search queries
+    # query_string, results[]
+    history: list[tuple[str, list]]
     # The return or error code
-    error: int
+    error: Exception | int
 
 
 class SaveDataHandler:
@@ -57,13 +59,13 @@ class SaveDataHandler:
                     history = json_data["history"]
 
                     return DataResponse(cwd, history, SUCCESS)
-                except json.JSONDecodeError:
-                    return DataResponse(None, [], JSON_ERROR)
+                except json.JSONDecodeError as e:
+                    return DataResponse(None, [], e)
         except Exception as e:
             typer.secho(f"Failed to read data! {e}", fg=typer.colors.RED)
-            return DataResponse(None, [], DB_READ_ERROR)
+            return DataResponse(None, [], e)
 
-    def write_data(self, cwd: Path, history: list[dict[int, Any]]) -> DataResponse:
+    def write_data(self, cwd: Path, history: list[tuple[str, list]]) -> DataResponse:
         """Write save data"""
         try:
             with self._db_path.open(mode="w") as db:
@@ -77,4 +79,4 @@ class SaveDataHandler:
             return DataResponse(cwd, history, SUCCESS)
         except Exception as e:
             typer.secho(f"Failed to write data! {e}", fg=typer.colors.RED)
-            return DataResponse(cwd, history, DB_WRITE_ERROR)
+            return DataResponse(cwd, history, e)

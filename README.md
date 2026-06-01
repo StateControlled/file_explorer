@@ -70,16 +70,16 @@ explorer (its original purpose) and a search engine.
 
 ### Commands
 
-| Command        | Description                                                    |
-|----------------|---------------------------------------------------------------|
-| `cfg`          | Print the current configuration                               |
-| `loc`          | Print the paths to saved data                                 |
-| `return-cwd`   | Return the working directory to its original point            |
-| `ls`           | List directory contents                                       |
-| `open`         | Open a text file in the console                                |
-| `cd`           | Change the current working directory                          |
-| **`index`**    | **Build the search index over a directory of documents**      |
-| **`search`**   | **Search the indexed documents for a query**                  |
+| Command      | Description                                              |
+|--------------|----------------------------------------------------------|
+| `cfg`        | Print the current configuration                          |
+| `loc`        | Print the paths to saved data                            |
+| `return-cwd` | Return the working directory to its original point       |
+| `ls`         | List directory contents                                  |
+| `open`       | Open a text file in the console                          |
+| `cd`         | Change the current working directory                     |
+| **`index`**  | **Build the search index over a directory of documents** |
+| **`search`** | **Search the indexed documents for a query**             |
 
 ### `index`
 
@@ -97,12 +97,12 @@ source code (`.py .java .c .h .cpp .cc .hpp .cs .js .ts .go .rs .rkt .hs`).
 python -m explorer search "QUERY" [--prf] [--boost] [-n N] [--index PATH]
 ```
 
-| Flag            | Effect                                                            |
-|-----------------|------------------------------------------------------------------|
-| `--prf`         | Enable Rocchio pseudo-relevance feedback                         |
-| `--boost`       | Enable query-conditioned file-type boosting                     |
-| `-n`, `--num`   | Number of results to display (default 10)                       |
-| `-i`, `--index` | Use a specific index file                                       |
+| Flag            | Effect                                      |
+|-----------------|---------------------------------------------|
+| `--prf`         | Enable Rocchio pseudo-relevance feedback    |
+| `--boost`       | Enable query-conditioned file-type boosting |
+| `-n`, `--num`   | Number of results to display (default 10)   |
+| `-i`, `--index` | Use a specific index file                   |
 
 With neither flag the system is the **baseline** TF-IDF cosine ranker; the two
 flags add the two advanced components, which is exactly the 2×2 ablation used in
@@ -122,13 +122,13 @@ python -m corpus.build_corpus --out data/corpus --scale 0.5   # smaller/faster
 python -m corpus.build_corpus --only wikipedia,gutenberg   # a subset of sources
 ```
 
-| Source            | File types          | What we gathered                                  |
-|-------------------|---------------------|---------------------------------------------------|
-| Project Gutenberg | `.txt`              | public-domain books (literature, philosophy, science) |
-| Wikipedia         | `.html`, `.txt`     | articles across ~18 topics (ML, cryptography, biology, …) |
-| arXiv             | `.pdf`              | recent CS papers (cs.IR, cs.LG, cs.CR, cs.DB, …)  |
+| Source            | File types              | What we gathered                                                                            |
+|-------------------|-------------------------|---------------------------------------------------------------------------------------------|
+| Project Gutenberg | `.txt`                  | public-domain books (literature, philosophy, science)                                       |
+| Wikipedia         | `.html`, `.txt`         | articles across ~18 topics (ML, cryptography, biology, …)                                   |
+| arXiv             | `.pdf`                  | recent CS papers (cs.IR, cs.LG, cs.CR, cs.DB, …)                                            |
 | GitHub repos      | `.py .java .cpp .h .rs` | source files from Flask, requests, nlohmann/json, gson, scikit-learn, sqlparser-rs, CPython |
-| GitHub notebooks  | `.ipynb`            | notebooks from data-science / ML repos (outputs stripped) |
+| GitHub notebooks  | `.ipynb`                | notebooks from data-science / ML repos (outputs stripped)                                   |
 
 > **AI-use disclosure:** `corpus/build_corpus.py` is a one-time data-collection
 > utility (it is *not* part of the IR system) and was written with the help of an
@@ -136,7 +136,7 @@ python -m corpus.build_corpus --only wikipedia,gutenberg   # a subset of sources
 
 Each file is catalogued in `data/corpus/manifest.json` with a `theme` label
 derived from **where it came from** (not its text). The evaluation uses those
-provenance labels as relevance judgements, so scoring does not simply reward the
+provenance labels as relevance judgments, so scoring does not simply reward the
 ranker for matching indexed words. Several themes (`machine_learning`,
 `cryptography`, `databases`, …) span multiple sources and file types on purpose,
 so that "which file type is relevant for this query" is genuinely testable.
@@ -146,14 +146,14 @@ The corpus used for the reported results contains **709 files**, of which **650*
 held extractable text and were indexed (the rest were empty/scanned PDFs or
 near-empty source files), giving **67,610 unique terms**:
 
-| File category | Documents |
-|---------------|-----------|
-| code (`.py .java .cpp .h .c .rs`) | 359 |
-| text (`.txt`)                     | 158 |
-| notebook (`.ipynb`)               | 77  |
-| html (`.html`)                    | 36  |
-| pdf (`.pdf`)                      | 20  |
-| **total**                         | **650** |
+| File category                     | Documents |
+|-----------------------------------|-----------|
+| code (`.py .java .cpp .h .c .rs`) | 359       |
+| text (`.txt`)                     | 158       |
+| notebook (`.ipynb`)               | 77        |
+| html (`.html`)                    | 36        |
+| pdf (`.pdf`)                      | 20        |
+| **total**                         | **650**   |
 
 > **Dataset access:** the exact ~45 MB corpus is shared here:
 > `‹ADD GOOGLE-DRIVE/ONEDRIVE LINK›`. Download and unzip it to `data/corpus/`
@@ -187,11 +187,10 @@ near-empty source files), giving **67,610 unique terms**:
 * **Preprocessing** (`explorer/ir/preprocess.py`) — tokenization, stopword
   removal and Porter stemming (NLTK), applied identically to documents and
   queries.
-* **Indexing** (`explorer/ir/index.py`) — an inverted index plus cosine-
-  normalized TF-IDF document vectors (SMART `ltc`). With both sides normalized,
-  cosine similarity is a dot product.
+* **Indexing** (`explorer/ir/index.py`) — an inverted index plus cosine-normalized TF-IDF document vectors (SMART `ltc`). 
+  With both sides normalized, cosine similarity is a dot product.
 * **Intent classifier** (`explorer/ir/intent.py`) — a transparent rule-based
-  classifier labelling each query `code`, `prose` or `neutral`.
+  classifier labeling each query `code`, `prose` or `neutral`.
 * **File-type boost** (`explorer/ir/rank.py`) — multiplies each document's score
   by a factor depending on (query intent × file category); the concrete answer
   to "what makes a file *type* relevant to a query".
@@ -208,11 +207,11 @@ python -m evaluation.evaluate --corpus data/corpus
 
 This builds qrels from the manifest, runs the four ablation variants over the
 test queries in [`evaluation/queries.py`](evaluation/queries.py), grid-searches
-the hyper-parameters, and writes `data/eval_results.json`. Metrics: **P@10,
+the hyperparameters, and writes `data/eval_results.json`. Metrics: **P@10,
 MAP, NDCG@10**.
 
 <!-- RESULTS_TABLE -->
-2×2 ablation over 28 queries (default hyper-parameters):
+2×2 ablation over 28 queries (default hyperparameters):
 
 | Variant              | P@10   | MAP    | NDCG@10 |
 |----------------------|--------|--------|---------|
