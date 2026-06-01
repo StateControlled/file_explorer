@@ -66,10 +66,10 @@ the intent classifier + boost and measured directly.
 
 > Replace the bracketed text with the actual split.
 
-**Noah Sleeman** — [e.g., file-explorer CLI foundation and `index`/`search`
+**NWilliam Berthoue** — [e.g., file-explorer CLI foundation and `index`/`search`
 command wiring; corpus builder (sources, manifest); … ].
 
-**William Berthouex** — [e.g., retrieval core (inverted index, TF-IDF, cosine);
+**Noah Sleeman** — [e.g., retrieval core (inverted index, TF-IDF, cosine);
 advanced features (intent classifier, boost, Rocchio PRF); … ].
 
 **Shared** — evaluation design (queries, qrels methodology, metrics), the report,
