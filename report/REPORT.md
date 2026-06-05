@@ -79,7 +79,7 @@ that strips morphological suffixes so that "connect", "connected", and
 relevant. The **Rocchio** algorithm moves the query vector toward the centroid of
 relevant documents and away from non-relevant ones [4]. **Pseudo-relevance
 feedback** (PRF) automates this by assuming the top-k initial results are
-relevant [2], trading the need for human judgements for the risk of *query drift*
+relevant [2], trading the need for human judgments for the risk of *query drift*
 when those assumptions are wrong.
 
 Prior file-search research emphasizes that file retrieval benefits from context

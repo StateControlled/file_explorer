@@ -4,8 +4,7 @@
 CSC 575 — Final Project
 
 > Draft to convert to `self_evaluation.pdf`. **Fill in the real per-member
-> contribution split in §2** — only the two of you know who did what; the text
-> below is a starting point, not a record.
+> contribution split in §2**
 
 ## 1. How the project fulfills each evaluation criterion
 
@@ -85,9 +84,6 @@ and the presentation.
   `report/figures/`.
 
 ## 4. Use of AI
-
-> Confirm this matches your course's AI policy and edit to reflect your actual
-> usage before submitting.
 
 The one-time data-collection script (`corpus/build_corpus.py`) was written with
 the help of an AI coding assistant; it downloads and labels public documents and

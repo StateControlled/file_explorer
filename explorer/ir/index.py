@@ -6,7 +6,7 @@
 # With both sides L2-normalized, cosine similarity is just the dot product. Using
 # the same weighting on both sides also means Rocchio relevance feedback (which
 # averages document vectors) operates in exactly the same space as the query.
-# On disk we persist only the raw structure. the document list, the document
+# On disk, we persist only the raw structure. the document list, the document
 # frequencies, and the raw term-frequency postings as gzipped JSON. The IDF
 # values and the normalized vectors are recomputed at load time. This keeps the
 # stored file compact (integers, not floats) and keeps the weighting math visible

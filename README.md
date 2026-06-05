@@ -175,11 +175,11 @@ near-empty source files), giving **67,610 unique terms**:
               │ query vector (ltc, L2-normalized)            ▼
               │                              inverted index + TF-IDF doc vectors
               │                                              │
-       ┌──────▼──────────────────────────────────────────────▼─────────┐
+       ┌──────▼──────────────────────────────────────────────▼──────────┐
        │ 1. cosine similarity ranking                                   │
        │ 2. [--prf]   Rocchio: move query toward top-k centroid, re-rank│
        │ 3. [--boost] multiply scores by boost[intent][file-type]       │
-       └───────────────────────────────┬───────────────────────────────┘
+       └───────────────────────────────┬────────────────────────────────┘
                                         ▼
                                  ranked results
 ```
@@ -247,7 +247,6 @@ evaluation/
   evaluate.py        ablation + grid search harness
 report/
   make_figures.py    builds the report figures from the results
-documents/           a few sample text documents
 ```
 
 ## Built With

@@ -21,8 +21,8 @@ Sources and file types
 
 Every downloaded file is recorded in ``manifest.json`` with provenance metadata,
 in particular a ``theme`` label derived from *where the file came from* (not its
-text). The evaluation uses these provenance labels to build relevance judgements
-(qrels), which keeps the judgements independent of the content-based ranker.
+text). The evaluation uses these provenance labels to build relevance judgments
+(qrels), which keeps the judgments independent of the content-based ranker.
 Several themes (machine_learning, cryptography, databases, ...) appear across
 multiple sources/file types on purpose, so "which file type is relevant" is
 testable.

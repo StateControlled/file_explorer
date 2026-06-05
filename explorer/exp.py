@@ -314,21 +314,18 @@ def search_history() -> None:
 
     temp_save = save_data_handler.read_save_data()
     hist = reversed(temp_save.history)
-    # items: int = cfg["max_history"]
 
-    # TODO
-    # app_console.print(f"[{theme["accent"]}]Search history: last {items} searches[/]")
-    # for i, (key, item) in enumerate(hist):
-    #     print(i, key, item)
+    if hist:
+        table = Table(title="Search History", box=box.ROUNDED, border_style=theme["accent"], header_style=theme["header"], show_header=True)
+        table.add_column("#", style=theme["header"], width=3)
+        table.add_column("Search Query", style=theme["file"])
+        table.add_column("Results", style=theme["date"], justify="right")
 
-    table = Table(title="Search History", box=box.ROUNDED, border_style=theme["accent"], header_style=theme["header"], show_header=True)
-    table.add_column("#", style=theme["header"], width=3)
-    table.add_column("Search Query", style=theme["file"])
-    table.add_column("Results", style=theme["date"], justify="right")
-
-    for i, (key, item) in enumerate(hist):
-        table.add_row(str(i + 1), key, str(len(item)))
-    app_console.print(table)
+        for i, (key, item) in enumerate(hist):
+            table.add_row(str(i + 1), key, str(len(item)))
+        app_console.print(table)
+    else:
+        app_console.print(f"[dim]There is no search history.[/]")
 
 
 ###############################################################################

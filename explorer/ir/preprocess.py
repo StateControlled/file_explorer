@@ -31,8 +31,8 @@ def tokenize(text: str) -> list[str]:
     return _TOKEN_RE.findall(text.lower())
 
 #lib stemmer
-def stem(token: str) -> str:
-    return _stemmer.stem(token)
+# def stem(token: str) -> str:
+#     return _stemmer.stem(token)
 
 #tokenize -> remove stopwords -> stem
 def analyze(text: str, *, removeStopwords: bool = True, doStem: bool = True) -> list[str]:

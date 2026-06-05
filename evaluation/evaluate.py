@@ -4,12 +4,12 @@
 # What it does
 # ------------
 # 1.  Builds (and caches) the index over the downloaded corpus.
-# 2.  Turns the provenance 'manifest.json' into binary relevance judgements
+# 2.  Turns the provenance 'manifest.json' into binary relevance judgments
 #     (qrels): a document is relevant to a query iff its provenance theme is one
 #     of the query's relevant themes.
 # 3.  Runs the four ablation variants (baseline / +boost / +PRF / full) and reports
 #     P@10, MAP and NDCG@10 -- the 2x2 table the brief asks for.
-# 4.  Grid-searches the hyper-parameters (PRF k, PRF beta, boost gamma) and reports
+# 4.  Grid-searches the hyperparameters (PRF k, PRF beta, boost gamma) and reports
 #     the effect of each, plus the best configuration.
 # 5.  Saves everything to 'data/eval_results.json' for the write-up and prints
 #     qualitative success/failure examples.
@@ -107,7 +107,7 @@ def run_ablation(index: Index, theme_to_docs: dict[str, set[int]], params: Searc
 
 
 def grid_search(index: Index, theme_to_docs: dict[str, set[int]]) -> dict:
-    """Grid-search PRF and boost hyper-parameters; also produce 1-D sweeps."""
+    """Grid-search PRF and boost hyperparameters; also produce 1-D sweeps."""
     prf_ks = [5, 10, 15, 20]
     betas = [0.25, 0.5, 0.75, 1.0]
     gammas = [0.0, 0.5, 1.0, 1.5, 2.0]
@@ -187,11 +187,14 @@ def qualitative(index: Index, theme_to_docs: dict[str, set[int]],
                  "n_relevant": len(relevant)}
         for tag, prf, boost in [("baseline", False, False), ("full", True, True)]:
             entry[tag] = [
-                {"title": r.title[:48], "category": r.category,
-                 "score": round(r.score, 4), "relevant": r.docId in relevant}
+                {"title": r.title[:48],
+                 "category": r.category,
+                 "score": round(r.score, 4),
+                 "relevant": r.docId in relevant
+                 }
                 for r in res
             ]
-            ]
+
         out.append(entry)
     return out
 
@@ -243,6 +246,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"  best by MAP: prf_k={b['prf_k']} prf_beta={b['prf_beta']} "
               f"boost_gamma={b['boost_gamma']} -> "
               f"P@10={b['P@10']:.4f} MAP={b['MAP']:.4f} NDCG@10={b['NDCG@10']:.4f}")
+        # print(grid["full_grid"])
 
     qual = qualitative(index, theme_to_docs, default_params,
                        ["q01", "q13", "q20", "q28"])
