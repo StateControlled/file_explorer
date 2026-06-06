@@ -70,16 +70,16 @@ explorer (its original purpose) and a search engine.
 
 ### Commands
 
-| Command      | Description                                              |
-|--------------|----------------------------------------------------------|
-| `cfg`        | Print the current configuration                          |
-| `loc`        | Print the paths to saved data                            |
-| `return-cwd` | Return the working directory to its original point       |
-| `ls`         | List directory contents                                  |
-| `open`       | Open a text file in the console                          |
-| `cd`         | Change the current working directory                     |
-| **`index`**  | **Build the search index over a directory of documents** |
-| **`search`** | **Search the indexed documents for a query**             |
+| Command              | Description                                              |
+|----------------------|----------------------------------------------------------|
+| **`index`**          | **Build the search index over a directory of documents** |
+| **`search`**         | **Search the indexed documents for a query**             |
+| **`search-history`** | Print the 10 most recent search queries                  |
+| `ls`                 | List directory contents                                  |
+| `open`               | Open a text file in the console                          |
+| `cd`                 | Change the current working directory                     |
+| `config`             | Manage configuration settings                            |
+| `cwd`                | Manipulate the current working directory                 |
 
 ### `index`
 
